@@ -1,0 +1,29 @@
+#:kivy 2.3.0
+
+<ValuesLabel>:
+    height: max(key_label.texture_size[1] + dp(10), dp(24))
+
+    Label:
+        size_hint: (.4, 1)
+        id: key_label
+        text_size: self.width, None
+
+    TextInput:
+        id: first_label
+        size_hint: (.2, 1)
+        multiline: False
+        on_text_validate: root.on_enter()
+
+    TextInput:
+        id: second_label
+        size_hint: (.2, 1)
+        multiline: False
+        on_text_validate: root.on_enter()
+
+    TextInput:
+        id: third_label
+        size_hint: (.2, 1)
+        multiline: False
+        on_text_validate: root.on_enter()
+
+

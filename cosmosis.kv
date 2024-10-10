@@ -1,0 +1,46 @@
+#:kivy 2.3.0
+
+BoxLayout:
+    orientation: 'vertical'
+        
+    BoxLayout:
+        size_hint: 1, 0.05
+        orientation: 'horizontal'
+        Button:
+            text: "Open pipeline"
+            size_hint: 0.2, 1
+            pos_hint: {'center_x': .225, 'center_y': .5}
+            id: open_button
+            on_press: app.start_open_file()
+        # Button:
+        #     text: "Toggle Info Panel"
+        #     size_hint: 0.2, 1
+        #     pos_hint: {'center_x': .225, 'center_y': .5}
+        #     id: panel_button
+        #     on_press: app.toggle_info_panel()
+
+    BoxLayout:
+        size_hint: 1, 0.95
+        orientation: 'vertical'
+
+        PipelinePanels:
+            size_hint: 1, 1
+            id: pipeline_panel
+
+        BoxLayout:
+            id: info_pane
+            orientation: 'vertical'
+            size_hint: 1, None
+            # size_hint: None, None
+            height: 300 if app.showInfoPanel else 0
+            opacity: 1 if app.showInfoPanel else 0
+
+            TextInput:
+                id: info_pane_text
+                disabled_foreground_color: (0, 0, 0, 1)
+                foreground_color: (0, 0, 0, 1)
+                background_color: (1, 1, 1, 1)
+                disabled_background_color: (1, 1, 1, 1)
+                multiline: True
+                text: "Info Panel"
+                disabled: True 

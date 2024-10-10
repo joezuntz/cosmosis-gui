@@ -1,0 +1,21 @@
+#:kivy 2.3.0
+
+
+
+<InifilePanel>:
+    orientation: 'vertical'
+    size_hint: .75, .5
+
+    ScrollView:
+        id: param_scroll
+        do_scroll: False, True
+        bar_width: dp(10)
+        scroll_type: ['bars','content']
+
+        TreeView:
+            id: tv
+            hide_root: True
+            root_options: {'text': 'Parameters'}
+            size_hint_y: None
+            height: self.minimum_height
+

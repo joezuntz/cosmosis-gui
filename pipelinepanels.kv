@@ -1,0 +1,26 @@
+#:kivy 2.3.0
+
+<PipelinePanels>:
+    size_hint: 1, .5
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    do_default_tab: False
+
+    InifilePanel:
+        id: params_tab
+        text: 'Params'
+
+    InifilePanel:
+        id: values_tab
+        text: 'Values'
+
+    InifilePanel:
+        id: priors_tab
+        text: 'Priors'
+
+    PipelineView:
+        id: pipeline_tab
+        text: 'Pipeline'
+
+    ResultsView:
+        id: results_tab
+        text: 'Results'

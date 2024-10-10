@@ -1,0 +1,82 @@
+#:kivy 2.3.0
+
+<PipelineView>:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            # button bar
+            orientation: 'horizontal'
+            size_hint: 1, 0.05
+            Button:
+                text: "Run pipeline"
+                size_hint: 0.2, 1
+                pos_hint: {'center_x': .225, 'center_y': .5}
+                id: run_button
+                on_press: app.run_pipeline()
+            Button:
+                text: "Reset pipeline"
+                size_hint: 0.2, 1
+                pos_hint: {'center_x': .225, 'center_y': .5}
+                id: run_button
+                on_press: app.reset_pipeline()
+        ScrollView:
+            do_scroll: False, True
+            bar_width: dp(10)
+            scroll_type: ['bars', 'content']
+            size_hint: 0.95, 1
+            pos_hint: {'center_x': .5, 'center_y': .5}
+
+            FloatLayout:
+                id: chart
+                size_hint: 1, 5
+
+
+
+<BackgroundColor>
+    background_color: 0, 0, 0, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<ResultsView>
+    BoxLayout:
+        orientation: 'horizontal'
+        ScrollView:
+            size_hint: 0.5, 1
+            do_scroll: False, True
+            bar_width: dp(10)
+            scroll_type: ['bars','content']
+            TreeView:
+                size_hint: 1, None
+                id: results_tree
+                height: self.minimum_height
+                hide_root: True
+        TextInput:
+            id: text_detail
+            disabled_foreground_color: (0, 0, 0, 1)
+            foreground_color: (0, 0, 0, 1)
+            background_color: (1, 1, 1, 1)
+            disabled_background_color: (1, 1, 1, 1)
+            multiline: True
+            text: ""
+            disabled: True 
+
+
+
+
+<Node>
+    rect: [self.x, self.y, self.width, self.height]
+    # size: self.texture_size
+    background_color: 0, 0, 0, 0
+
+    canvas.after:
+        Color
+            rgba: self.border_color
+
+        Line
+            width: 1.5
+            close: True
+            rectangle: self.rect

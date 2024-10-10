@@ -1,0 +1,16 @@
+#:kivy 2.3.0
+
+<KeyValueLabel>:
+    height: max(key_label.texture_size[1] + dp(10), dp(24))
+
+    Label:
+        size_hint: (.5, 1)
+        id: key_label
+        text_size: self.width, None
+
+    TextInput:
+        size_hint: (.5, 1)
+        id: value_label
+        multiline: False
+        on_text_validate: root.on_enter()
+        # on_focus: root.on_focus()
