@@ -4,63 +4,71 @@ from kivy.uix.label import Label
 from connector import Connector
 from kivy.properties import NumericProperty, ListProperty, ColorProperty
 from kivy.clock import Clock
+from kivy.app import App
+from kivy.uix.floatlayout import FloatLayout
 
-
-
-class PipelineView(TabbedPanelItem):
+class Flowchart(FloatLayout):
     def __init__(self, **kwargs):
-        super(PipelineView, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.nodes = {}
         self.connectors = []
 
     def clear_pipeline(self):
-        self.ids["chart"].clear_widgets()
+        self.clear_widgets()
         self.nodes = {}
         self.connectors = []
+
+    def on_size(self, *args, **kwargs):
+        print("size", args, kwargs)
+        self.reposition()
+        # super().on_size(*args, **kwargs)
+
+    def on_width(self, *args, **kwargs):
+        print("width", args, kwargs)
+        self.reposition()
+        # super().on_width(*args, **kwargs)
 
     def reposition(self):
         # we need to reposition all the nodes so that they are in the right place
         # and all the connectors so that they are in the right place
-        chart = self.ids["chart"]
-        chart.height = len(self.nodes) * 100
-        height = chart.height
-        print('chart pos size', chart.pos, chart.size)
+        height = len(self.nodes) * 155
+        self.height = height
         for i, node in enumerate(self.nodes.values()):
-            # node.size = (chart.width, 50)
-            # node.size
-            node.pos[0] = chart.width/2 # - node.width/2
-            node.pos[1] = height - (i+1) * 100
-            # node.size = (chart.width, 50)
-            print(node.pos)
+            node.pos[0] = self.width/2  - node.width/2
+            node.pos[1] = height - (i+1) * 150
+            # # node.size = (chart.width, 50)
+            # print(node.text, node.pos)
 
     def draw_pipeline(self, modules):
         self.clear_pipeline()
-        chart = self.ids["chart"]
-        height = chart.height
-        print("height", height)
+        chart = self
+        # height = chart.height
+        # print("height", height)
         for i, module in enumerate(modules):
-            box = Node(text=module)
-            box.background_color = [0, 0, 1, 0.3]
+            node = Node(text=module)
+            node.background_color = [0, 0, 1, 0.3]
             
             # box.size_hint = (0.3, 0.05)
-            box.size_hint = (0.3, None)
+            node.size_hint = (0.3, None)
+            node.pos_hint = {}
+            
             # box.height = 20
             # box.pos_hint = {"center_x": 0.5, "center_y": None}
             # box.pos_hint = 
-            box.pos_y = height - (i+1) * 50
-            chart.add_widget(box)
+            # node.pos_y = height - (i+1) * 50
+            chart.add_widget(node)
             if i > 0:
                 # add a line between this widget and the previous one
                 line = Connector(line_color=[1, 0, 0, 1], line_width=3)
                 chart.add_widget(line)
                 self.connectors.append(line)
-                box.ancestors.append(last_box)
-                box.ancestor_connectors.append(line)
-                last_box.descendants.append(box)
-                last_box.descendant_connectors.append(line)
-            last_box = box
-            self.nodes[module] = box
-            Clock.schedule_once(lambda dt: self.reposition(), 0)
+                node.ancestors.append(last_node)
+                node.ancestor_connectors.append(line)
+                last_node.descendants.append(node)
+                last_node.descendant_connectors.append(line)
+            last_node = node
+            self.nodes[module] = node
+        Clock.schedule_once(lambda dt: self.reposition(), 0)
 
     def update_lines(self):
         for node in self.nodes.values():
@@ -77,6 +85,10 @@ class PipelineView(TabbedPanelItem):
         elif update == "failure":
             node.background_color = [1, 0, 0, 0.3]
 
+
+class PipelineView(TabbedPanelItem):
+    def update_lines(self):
+        self.ids["chart"].update_lines()
 
 
 

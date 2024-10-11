@@ -42,11 +42,5 @@ class ResultsView(TabbedPanelItem):
             self.section_nodes.append(node)
             tv.add_node(node)
             for _, key in block.keys(section):
-                value = block[section, key]
-                if isinstance(value, (float, int, complex, str)):
-                    type_text = type(value).__name__
-                elif isinstance(value, (np.ndarray)):
-                    dims = 'x'.join(str(x) for x in value.shape)
-                    type_text = f"{dims} {value.dtype}"
-                label = ResultsLabel(text = f"{key} -- {type_text}")
+                label = ResultsLabel(text = f"{key}")
                 tv.add_node(label, node)

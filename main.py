@@ -1,3 +1,9 @@
+import os
+dirname = os.path.dirname(os.path.realpath(__file__))
+resource_dir = os.path.join(dirname, 'resources')
+# os.environ['KIVY_DATA_DIR'] = resource_dir
+
+
 import cosmosis
 from kivy.app import App
 from kivy.lang import Builder
@@ -90,16 +96,13 @@ class Backend:
         module = self.pipeline.get_module(section)
 
         if module is None:
-            print("no module")
             return ""
         doc = module.doc
         if doc is None:
-            print("no doc")
             return ""
         try:
             info = doc["params"][key]
         except KeyError:
-            print("no params or key")
             return ""
         try:
             meaning = info["meaning"]
@@ -110,9 +113,8 @@ class Backend:
             else:
                 default = "Required parameter."
 
-            return f"{val_type}. {default}\n{meaning})"
+            return f"{val_type}. {default}\n{meaning}"
         except Exception as e:
-            print(f"error {e}")
             return ""
 
     def set_param(self, section, key, value):
@@ -146,41 +148,138 @@ class Backend:
         v = self.pipeline.start_vector()
         self.results = self.pipeline.run_results(v)
         block = self.results.block
+
+        # Rebuild the log of all quantities in the pipeline
         self.pipeline_log = []
         for i in range(block.get_log_count()):
             entry = block.get_log_entry(i)
             self.pipeline_log.append(entry)
+
         Clock.schedule_once(lambda dt: self.app.display_results(), 0)
 
-
-    def get_info_for_quantity(self, section, key):
+    def get_info_for_section(self, section):
         if self.results is None:
             return None
-        # get the logs of the block to find out when this was made etc
-        info = []
-        module = "Sampler"
+        if not self.results.block.has_section(section):
+            return None
+        
+        info = ["[size=48][u]Section Detail[/u][/size]"]
+        info.append("This is a CosmoSIS section, a data category used to store data in a structured way. Inside the section are multiple values.")
+        n = len(self.results.block.keys(section))
+        info.append("\nYou can find a list of the {n} values in this section by expanding the entry in the panel on the left.")
+
+        info.append("   [size=36][u]History[/u][/size]")
+
         for entry in self.pipeline_log:
             if entry.logtype == BLOCK_LOG_START_MODULE:
                 module = entry.section
             if module == "Results":
                 continue
+
+        return info
+        
+
+    def get_info_for_quantity(self, section, key):
+        if self.results is None:
+            return None
+
+        # get the logs of the block to find out when this was made etc
+        module = "Sampler"
+        if self.results.block.has_value(section, key):
+            value = self.results.block[section, key]
+        else:
+            return [""]
+        deleted = False
+
+
+        info = ["[size=48][u]Value Detail[/u][/size]"]
+
+        info.append("This value was stored in the results data block.  Data passed through CosmoSIS pipelines are stored by [i]name[/i] within a [i]section[/i] (category).")
+        if (section, key) in self.pipeline.varied_params:
+            info.append("It was set in the 'Values' and can be varied by the sampler at the start of the pipeline")
+        elif (section, key) in self.pipeline.fixed_params:
+            info.append("It was set in the 'Values' to a fixed value at the start of the pipeline")
+        else:
+            info.append("It was calculated during the pipeline.")
+
+
+        info.append("\n")
+        doc_index = len(info)
+
+        info.append("[size=36][u]Value[/u][/size]")
+        info.append(f" \u2022 Value name: [b]{key}[/b]")
+        info.append(f" \u2022 Section name: [b]{section}[/b] ")
+        if isinstance(value, (float, int, str, complex)):
+            info.append(f" \u2022 Type of data: {type(value).__name__}")
+            info.append(f" \u2022 Final value: {value}")
+        elif isinstance(value, np.ndarray):
+            info.append(f" \u2022 Type of data: {value.ndim}D {value.dtype} array")
+            if value.ndim == 1:
+                info.append(f" \u2022 Size: {value.size}")
+            else:
+                shp = "x".join(str(x) for x in value.shape)
+                info.append(f" \u2022 Dimensions: {shp}")
+        info.append("\n")
+        info.append("   [size=36][u]History[/u][/size]")
+
+        if section == "priors":
+            info.append(" \u2022 Prior computed by the pipeline")
+
+        doc = None
+
+        for entry in self.pipeline_log:
+            if entry.logtype == BLOCK_LOG_START_MODULE:
+                module = entry.section
+            if module == "Results":
+                continue
+
             if entry.section == section and entry.name == key:
                 if entry.logtype == BLOCK_LOG_READ:
-                    info.append(f"{module} read this value")
+                    entry = " \u2022 Read and used by " + module
+                    if info and info[-1] != entry:
+                        info.append(entry)
                 elif entry.logtype == BLOCK_LOG_WRITE:
-                    info.append(f"{module} wrote this value")
+                    if deleted:
+                        info.append(" \u2022 A new value was re-calculated by " + module)
+                    elif module == "Sampler":
+                        info.append(" \u2022 Set by the sampler")
+                    elif info and info[-1] == f" \u2022 Set by {module}, which checked for a value but found none so set it to be its own default.":
+                        pass
+                    else:
+                        info.append(" \u2022 First calculated by " + module)
+
+                        # get the pipeline documentation for the module, if any
+                        module_object = self.pipeline.get_module(module)
+                        if module_object.doc is not None:
+                            for k1, v1 in module_object.doc["outputs"].items():
+                                if k1.lower() == section:
+                                    for k2, v2 in v1.items():
+                                        if k2.lower() == key:
+                                            doc = v2["meaning"]
                 elif entry.logtype == BLOCK_LOG_READ_FAIL:
-                    info.append(f"{module} tried to read this value but failed")
+                    info.append(" \u2022 Looked for but not found by " + module)
                 elif entry.logtype == BLOCK_LOG_WRITE_FAIL:
-                    info.append(f"{module} tried to write this value but failed")
+                    info.append(f" \u2022 Module {module} tried to save this, but it was already there so this failed")
                 elif entry.logtype == BLOCK_LOG_READ_DEFAULT:
-                    info.append(f"{module} read the default value")
+                    info.append(f" \u2022 Set by {module}, which checked for a value but found none so set it to be its own default.")
                 elif entry.logtype == BLOCK_LOG_REPLACE:
-                    info.append(f"{module} replaced this value")
+                    info.append(' \u2022 Overwritten by ' + module + ' (though it might not have changed it)')
                 elif entry.logtype == BLOCK_LOG_REPLACE_FAIL:
-                    info.append(f"{module} tried to replace this value but failed")
+                    info.append(' \u2022 Tried to overwrite but failed by ' + module)
                 else:
-                    info.append(f"{module} unknown log type {entry.logtype}")
+                    print(entry)
+                    continue
+            elif entry.section == section and entry.logtype == BLOCK_LOG_DELETE:
+                info.append("\ u2022 Deleted by " + module)
+                deleted = True
+
+        if doc is not None:
+            info.insert(doc_index, "[size=36][u]Documentation[/u][/size]")
+            info.insert(doc_index+1, "The module that first wrote this value documented it as follows:")
+            info.insert(doc_index+2, f"   {doc}")
+            info.insert(doc_index+3, "\n")
+
+
         return info
                 
 
@@ -207,11 +306,11 @@ class CosmosisApp(App):
         return self._backend
         
     def setup_pipeline_tab(self):
-        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"]
+        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"].ids["chart"]
         Clock.schedule_once(lambda dt: tab.draw_pipeline(self.backend.modules()), 0)
 
     def update_pipeline_tab(self, module, update):
-        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"]
+        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"].ids["chart"]
         Clock.schedule_once(lambda dt: tab.update_module(module, update), 0)
 
     def display_results(self):
@@ -236,7 +335,7 @@ class CosmosisApp(App):
 
     def reset_pipeline(self):
         self.backend.results = None
-        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"]
+        tab = self.root.ids["pipeline_panel"].ids["pipeline_tab"].ids["chart"]
         tab.reset_colours()
 
     def display_help(self, kind, section, key):
@@ -248,7 +347,8 @@ class CosmosisApp(App):
 
     def selected_result_node(self, section, key):
         info = self.backend.get_info_for_quantity(section, key)
-        self.root.ids["pipeline_panel"].ids["results_tab"].ids["text_detail"].text = "\n".join(info)
+        if info is not None:
+            self.root.ids["pipeline_panel"].ids["results_tab"].ids["text_detail"].text = "\n".join(info)
 
         
 
@@ -260,6 +360,7 @@ if __name__ == '__main__':
     Builder.load_file("priorslabel.kv")
     Builder.load_file("inifilepanel.kv")
     Builder.load_file("pipelineview.kv")
+    Builder.load_file("resultsview.kv")
     Builder.load_file("pipelinepanels.kv")
     Builder.load_file("cosmosis.kv")
     # Clock.schedule_once(lambda dt: app.open_file(["/Users/jzuntz/src/cosmosis/cosmosis-standard-library/examples/bao.ini"]), 0)

@@ -1,0 +1,50 @@
+#:kivy 2.3.0
+
+<Separator@Widget>:
+    canvas:
+        Color:
+            rgba: 48/255., 48/255., 48/255., 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<HSeparator@Separator>:
+    size_hint_y: None
+    height: dp(4)
+
+<VSeparator@Separator>:
+    size_hint_x: None
+    width: dp(4)
+
+
+<ResultsView>
+    BoxLayout:
+        orientation: 'horizontal'
+        ScrollView:
+            size_hint: 0.5, 1
+            do_scroll: False, True
+            bar_width: dp(10)
+            scroll_type: ['bars','content']
+            TreeView:
+                size_hint: 1, None
+                id: results_tree
+                height: self.minimum_height
+                hide_root: True
+
+        VSeparator
+
+        Label:
+            # size_hint: 0.95, 1
+            # pos_hint: {'center_x': 0.05}
+            id: text_detail
+            disabled_foreground_color: (0, 0, 0, 1)
+            foreground_color: (0, 0, 0, 1)
+            background_color: (1, 1, 1, 1)
+            disabled_background_color: (1, 1, 1, 1)
+            multiline: True
+            text: ""
+            # disabled: True 
+            text_size: self.size
+            halign: 'left'
+            valign: 'top'
+            markup: True

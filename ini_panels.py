@@ -154,10 +154,8 @@ class InifilePanel(TabbedPanelItem):
 
     def set_ini(self, ini, kind):
         tv: TreeView = self.ids["tv"]
-        print(tv)
         self.clear_tree(tv)
         for section in ini.sections():
-            print("doing section", section)
             section_node = tv.add_node(TreeViewLabel(text=section))
             self.section_nodes.append(section_node)
             for key, value in ini.items(section):
@@ -169,8 +167,5 @@ class InifilePanel(TabbedPanelItem):
                     node = PriorsLabel(section, key_text=key, text=value)
                 else:
                     raise ValueError(f"Unknown kind {kind}")
-                print("tv = ", tv)
-                print("node = ", node.key_text)
-                print("section_node = ", section_node.text)
                 tv.add_node(node, section_node)
                     
