@@ -19,14 +19,8 @@ class Flowchart(FloatLayout):
         self.connectors = []
 
     def on_size(self, *args, **kwargs):
-        print("size", args, kwargs)
         self.reposition()
-        # super().on_size(*args, **kwargs)
 
-    def on_width(self, *args, **kwargs):
-        print("width", args, kwargs)
-        self.reposition()
-        # super().on_width(*args, **kwargs)
 
     def reposition(self):
         # we need to reposition all the nodes so that they are in the right place
@@ -36,14 +30,11 @@ class Flowchart(FloatLayout):
         for i, node in enumerate(self.nodes.values()):
             node.pos[0] = self.width/2  - node.width/2
             node.pos[1] = height - (i+1) * 150
-            # # node.size = (chart.width, 50)
-            # print(node.text, node.pos)
 
     def draw_pipeline(self, modules):
         self.clear_pipeline()
         chart = self
-        # height = chart.height
-        # print("height", height)
+
         for i, module in enumerate(modules):
             node = Node(text=module)
             node.background_color = [0, 0, 1, 0.3]
@@ -52,10 +43,6 @@ class Flowchart(FloatLayout):
             node.size_hint = (0.3, None)
             node.pos_hint = {}
             
-            # box.height = 20
-            # box.pos_hint = {"center_x": 0.5, "center_y": None}
-            # box.pos_hint = 
-            # node.pos_y = height - (i+1) * 50
             chart.add_widget(node)
             if i > 0:
                 # add a line between this widget and the previous one

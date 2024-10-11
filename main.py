@@ -160,6 +160,7 @@ class Backend:
     def get_info_for_section(self, section):
         if self.results is None:
             return None
+
         if not self.results.block.has_section(section):
             return None
         
@@ -167,14 +168,54 @@ class Backend:
         info.append("This is a CosmoSIS section, a data category used to store data in a structured way. Inside the section are multiple values.")
         n = len(self.results.block.keys(section))
         info.append("\nYou can find a list of the {n} values in this section by expanding the entry in the panel on the left.")
+        info.append("\n")
 
-        info.append("   [size=36][u]History[/u][/size]")
+        info.append("[size=36][u]Modules[/u][/size]")
+
+        readers = set()
+        writers = set()
+        deleters = set()
+
+        module = "Sampler"
 
         for entry in self.pipeline_log:
             if entry.logtype == BLOCK_LOG_START_MODULE:
                 module = entry.section
             if module == "Results":
                 continue
+            if entry.section == section:
+
+                if entry.logtype in [BLOCK_LOG_READ]:
+                    readers.add(module)
+                elif entry.logtype in [BLOCK_LOG_WRITE, BLOCK_LOG_REPLACE, BLOCK_LOG_READ_DEFAULT, BLOCK_LOG_REPLACE]:
+                    writers.add(module)
+                elif entry.logtype in [BLOCK_LOG_DELETE]:
+                    deleters.add(module)
+
+        if readers:
+            if len(readers) == 1:
+                info.append("This module read from this section:")
+            else:
+                info.append("These modules read from this section:")
+            for r in readers:
+                info.append(f" \u2022 {r}")
+            info.append("\n")
+        if writers:
+            if len(writers) == 1:
+                info.append("This module wrote to this section:")
+            else:
+                info.append("These modules wrote to this section:")
+            for r in writers:
+                info.append(f" \u2022 {r}")
+            info.append("\n")
+        if deleters:
+            if len(deleters) == 1:
+                info.append("This module deleted this section:")
+            else:
+                info.append("These modules deleted this section:")
+            for r in deleters:
+                info.append(f" \u2022 {r}")
+            info.append("\n")
 
         return info
         
@@ -190,7 +231,6 @@ class Backend:
         else:
             return [""]
         deleted = False
-
 
         info = ["[size=48][u]Value Detail[/u][/size]"]
 
@@ -256,6 +296,7 @@ class Backend:
                                     for k2, v2 in v1.items():
                                         if k2.lower() == key:
                                             doc = v2["meaning"]
+                                            doc_provider = module
                 elif entry.logtype == BLOCK_LOG_READ_FAIL:
                     info.append(" \u2022 Looked for but not found by " + module)
                 elif entry.logtype == BLOCK_LOG_WRITE_FAIL:
@@ -275,7 +316,7 @@ class Backend:
 
         if doc is not None:
             info.insert(doc_index, "[size=36][u]Documentation[/u][/size]")
-            info.insert(doc_index+1, "The module that first wrote this value documented it as follows:")
+            info.insert(doc_index+1, f"The {doc_provider} module, which created this value, described it as meaning:")
             info.insert(doc_index+2, f"   {doc}")
             info.insert(doc_index+3, "\n")
 
@@ -298,7 +339,7 @@ class CosmosisApp(App):
     def show_info_panel(self):
         self.showInfoPanel = True
 
-    def hide_info_pane(self):
+    def hide_info_panel(self):
         self.showInfoPanel = False
 
     @property
@@ -346,7 +387,11 @@ class CosmosisApp(App):
             self.show_info_panel()
 
     def selected_result_node(self, section, key):
-        info = self.backend.get_info_for_quantity(section, key)
+        if section == "Root":
+            info = self.backend.get_info_for_section(key)
+        else:
+            info = self.backend.get_info_for_quantity(section, key)
+
         if info is not None:
             self.root.ids["pipeline_panel"].ids["results_tab"].ids["text_detail"].text = "\n".join(info)
 

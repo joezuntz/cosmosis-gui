@@ -10,7 +10,7 @@ from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewNode
 
 class ResultsLabel(TreeViewLabel):
     def on_touch_down(self, touch):
-        key = self.text.split(" -- ")[0].strip()
+        key = self.text.strip()
         section = self.parent_node.text
         app = App.get_running_app()
         app.selected_result_node(section, key)

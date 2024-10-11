@@ -130,13 +130,21 @@ class PriorsLabel(BoxLayout, TreeViewNode):
 class PipelinePanels(TabbedPanel):
     def set_params(self, ini: cosmosis.Inifile):
         self.ids["params_tab"].set_ini(ini, "params")
+
     def set_values(self, ini: cosmosis.Inifile):
         self.ids["values_tab"].set_ini(ini, "values")
+
     def set_priors(self, ini: cosmosis.Inifile):
         self.ids["priors_tab"].set_ini(ini, "priors")
+
     def on_current_tab(self, from_, to_):
         if to_.text == "Pipeline":
-            Clock.schedule_once(lambda dt: to_.update_lines(), 0)
+            Clock.schedule_once(lambda dt: to_.update_lines() and to_.ids["chart"].reposition(), 0)
+        if to_.text != "Params":
+            app = App.get_running_app()
+            Clock.schedule_once(lambda dt: app.hide_info_panel(), 0)
+            
+
 
 
 
